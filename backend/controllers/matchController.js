@@ -3,7 +3,7 @@ require("../data/profiles.json");
 const customers =
 require("../data/customer.json");
 
-const calculateMatchScore =
+const calculateMatchFit =
 require("../utils/matchingalgo");
 const generateReason =
 require("../utils/geminiService");
@@ -24,17 +24,30 @@ const getMatches = async (req, res) => {
     });
   }
 
-  const matches = profiles
+  const rankedProfiles = profiles
     .map(candidate => ({
       ...candidate,
-      score: calculateMatchScore(
+      ...calculateMatchFit(
         customer,
         candidate
       )
     }))
     .filter(candidate => candidate.score > 0)
-    .sort((a,b) => b.score - a.score)
-    .slice(0,5);
+    .sort((a,b) => b.score - a.score);
+
+  const strongMatches =
+    rankedProfiles.filter(candidate => candidate.score >= 45);
+
+  const matches = (
+    strongMatches.length >= 5
+      ? strongMatches
+      : rankedProfiles
+  )
+    .slice(0,5)
+    .map((match, index) => ({
+      ...match,
+      rank: index + 1
+    }));
 
   if (!includeAiReason) {
     return res.json(matches);

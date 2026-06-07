@@ -17,6 +17,42 @@ function DetailRow({ label, value }) {
   );
 }
 
+function ScoreBreakdown({ breakdown }) {
+  if (!Array.isArray(breakdown) || breakdown.length === 0) {
+    return null;
+  }
+
+  return (
+    <details className="mt-3">
+      <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+        Score breakdown
+      </summary>
+      <div className="mt-3 grid gap-2">
+        {breakdown.map((item) => {
+          const percentage = item.max ? Math.round((item.score / item.max) * 100) : 0;
+
+          return (
+            <div key={item.label}>
+              <div className="mb-1 flex items-center justify-between gap-3 text-xs text-slate-600">
+                <span>{item.label}</span>
+                <span>
+                  {item.score}/{item.max}
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className="h-full rounded-full bg-blue-600"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </details>
+  );
+}
+
 function CustomerDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -214,9 +250,41 @@ function CustomerDetails() {
                     </h3>
                     <p>Age: {match.age}</p>
                     <p>City: {match.city}</p>
+                    {match.fitLabel && (
+                      <p className="mt-2 text-sm font-semibold text-blue-700">
+                        {match.fitLabel}
+                      </p>
+                    )}
+                    {Array.isArray(match.tags) && match.tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {match.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {Array.isArray(match.reasons) && match.reasons.length > 0 && (
+                      <ul className="mt-3 grid gap-1 text-sm text-slate-700">
+                        {match.reasons.slice(0, 3).map((reason) => (
+                          <li key={reason}>- {reason}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {Array.isArray(match.cautions) && match.cautions.length > 0 && (
+                      <ul className="mt-2 grid gap-1 text-sm text-amber-700">
+                        {match.cautions.slice(0, 2).map((caution) => (
+                          <li key={caution}>- {caution}</li>
+                        ))}
+                      </ul>
+                    )}
+                    <ScoreBreakdown breakdown={match.breakdown} />
                     {match.reason && (
                       <p className="mt-2 max-w-2xl text-sm text-slate-600">
-                        {match.reason}
+                        AI note: {match.reason}
                       </p>
                     )}
                     {reasonErrors[match.id] && (
