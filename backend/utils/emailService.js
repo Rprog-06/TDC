@@ -4,7 +4,7 @@ const nodemailer = require("nodemailer");
 // For development/demo: use Ethereal (fake SMTP)
 // For production: use your email provider (Gmail, SendGrid, etc.)
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST 
+  host: process.env.EMAIL_HOST,
   port: process.env.EMAIL_PORT || 587,
   secure: process.env.EMAIL_SECURE === "true" || false,
   auth: {
