@@ -74,5 +74,23 @@ router.post("/send-match", async (req, res) => {
     });
   }
 });
+router.get("/test-email", async (req, res) => {
+  try {
+    await sgMail.send({
+      to: "vahorarizwan27@gmail.com",
+      from: process.env.EMAIL_FROM,
+      subject: "SendGrid Test",
+      html: "<h1>Test Email Successful</h1>",
+    });
+
+    res.json({
+      success: true,
+      message: "Email sent",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json(err);
+  }
+});
 
 module.exports = router;
