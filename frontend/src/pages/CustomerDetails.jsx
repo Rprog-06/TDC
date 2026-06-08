@@ -138,10 +138,11 @@ function CustomerDetails() {
       });
 
       if (response.data.success) {
-        toast.success(
-          `✅ Match sent to ${customer.email}`,
-          { position: "bottom-right", autoClose: 4000 }
-        );
+        alert("SUCCESS BLOCK");
+  toast.success(`✅ Match sent to ${customer.email}`);
+
+        
+
       }
     } catch (sendError) {
       console.error("Send match failed:", sendError.response?.data || sendError.message);
