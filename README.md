@@ -2,7 +2,7 @@
 
 Short internal MVP for a Matchmaker Dashboard used by The Date Crew (TDC). This repo contains a small Express backend and a React + Vite frontend demonstrating customer management, a matchmaking pool, and a scoring-based matching algorithm.
 
-Live demo: (replace with hosted link if available)
+Live demo: https://tdc-1-ax8z.onrender.com
 
 Repository: https://github.com/<your-username>/TDC
 
@@ -35,16 +35,11 @@ npm test
 
 ## Sample login
 
-- username: `matchmaker@example.com`
-- password: `password123`
+- username: `admin@tdc.com`
+- password: `123456`
 
 (These are demo credentials used by the simple login flow in the frontend.)
 
-## Email Feature Setup
-
-The "Send Match" button now sends **real emails** with a professional template. For setup (local or production), see [EMAIL_SETUP.md](./EMAIL_SETUP.md).
-
-**Quick demo**: Use [Ethereal Email](https://ethereal.email) (free) for local testing.
 
 ## Tech choices
 
@@ -71,11 +66,4 @@ Design goals: realistic, explainable scoring; gender-specific heuristics (as per
 - Data is synthetic and intentionally anonymized.
 - The MVP focuses on internal matchmaker workflows rather than public user onboarding.
 
-## Next steps / Improvements to impress recruiters
 
-- Add CI (GitHub Actions) to run tests and linting on pushes.
-- Host the frontend on Vercel / Netlify and the backend on Render (or use one container for both).
-- Integrate OpenAI to generate email copy and match explanations at send-time.
-
----
-For the recommended email copy to submit this assignment, see `EMAIL.md`.
