@@ -108,6 +108,13 @@ async function getTransporter() {
   console.log("No complete EMAIL_* config found - using Ethereal test account for emails.");
   transporterPromise = nodemailer.createTestAccount().then((account) => {
     console.log("Ethereal account created:", account.user);
+    console.log("SMTP CONFIG", {
+  host: config.host,
+  port: config.port,
+  secure: config.secure,
+  user: config.user,
+  passwordSet: !!config.pass,
+});
     return nodemailer.createTransport({
       host: "smtp.ethereal.email",
       port: 587,
