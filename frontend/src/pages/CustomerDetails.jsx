@@ -144,7 +144,7 @@ function CustomerDetails() {
         );
       }
     } catch (sendError) {
-      console.error(sendError);
+      console.error("Send match failed:", sendError.response?.data || sendError.message);
       const errorMsg =
         sendError.response?.data?.message || "Failed to send match";
       toast.error(`❌ ${errorMsg}`, { position: "bottom-right", autoClose: 4000 });

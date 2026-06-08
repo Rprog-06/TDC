@@ -15,7 +15,7 @@ Requirements: Node.js >= 18, npm/yarn
 ```bash
 cd backend
 npm install
-npm run dev   # starts server on http://localhost:3000 (default)
+npm run dev   # starts server on http://localhost:5000 (default)
 ```
 
 2. Frontend

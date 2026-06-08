@@ -74,6 +74,32 @@ EMAIL_PASSWORD=your_sendgrid_api_key
 ### Option C: Your Email Provider
 Configure `EMAIL_HOST`, `EMAIL_PORT`, and credentials accordingly.
 
+### Production troubleshooting
+
+After deploying the backend, open:
+
+```
+https://your-backend-url/api/actions/email-status
+```
+
+It returns only redacted config status. `configured` must be `true`; if it is
+`false`, add the listed `missing` variables to the production backend service
+environment and redeploy.
+
+Required production variables:
+
+```
+EMAIL_HOST=your_smtp_host
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=your_smtp_user
+EMAIL_PASSWORD=your_smtp_password_or_api_key
+EMAIL_FROM=noreply@thedatecrew.com
+```
+
+For port `465`, use `EMAIL_SECURE=true`. For port `587`, use
+`EMAIL_SECURE=false`.
+
 ---
 
 ## Features
