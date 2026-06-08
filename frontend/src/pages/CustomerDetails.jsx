@@ -139,7 +139,7 @@ function CustomerDetails() {
 
       if (response.data.success) {
         alert("SUCCESS BLOCK");
-  toast.success(`✅ Match sent to ${customer.email}`);
+  toast.success(` Match sent to ${customer.email}`);
 
         
 
