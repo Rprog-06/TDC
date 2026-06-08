@@ -1,23 +1,58 @@
 const nodemailer = require("nodemailer");
 
-// Configure email transporter
-// For development/demo: use Ethereal (fake SMTP)
-// For production: use your email provider (Gmail, SendGrid, etc.)
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT || 587,
-  secure: process.env.EMAIL_SECURE === "true" || false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+let transporterPromise = null;
+
+/**
+ * Get the transporter, auto-creating an Ethereal test account
+ * if no valid production email config is set.
+ */
+async function getTransporter() {
+  if (transporterPromise) return transporterPromise;
+
+  // If real email config is provided AND we're in production, use it
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.EMAIL_HOST &&
+    process.env.EMAIL_USER &&
+    process.env.EMAIL_PASSWORD
+  ) {
+    transporterPromise = Promise.resolve(
+      nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT, 10) || 587,
+        secure: process.env.EMAIL_SECURE === "true",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD,
+        },
+      })
+    );
+    return transporterPromise;
+  }
+
+  // Development / demo fallback: auto-create Ethereal test account
+  console.log("No EMAIL_HOST configured — using Ethereal test account for emails.");
+  transporterPromise = nodemailer.createTestAccount().then((account) => {
+    console.log("Ethereal account created:", account.user);
+    return nodemailer.createTransport({
+      host: "smtp.ethereal.email",
+      port: 587,
+      secure: false,
+      auth: {
+        user: account.user,
+        pass: account.pass,
+      },
+    });
+  });
+
+  return transporterPromise;
+}
 
 /**
  * Send a match introduction email
  * @param {Object} customer - Customer profile (receiver)
  * @param {Object} match - Match profile (being suggested)
- * @returns {Promise<string>} - Preview URL or email info
+ * @returns {Promise<Object>} Result with messageId and optional previewUrl
  */
 async function sendMatchEmail(customer, match) {
   if (!customer.email) {
@@ -64,21 +99,16 @@ async function sendMatchEmail(customer, match) {
   };
 
   try {
+    const transporter = await getTransporter();
     const info = await transporter.sendMail(mailOptions);
     console.log("Email sent:", info.messageId);
-    
-    // For Ethereal (demo): return preview URL
-    if (process.env.NODE_ENV !== "production" && info.response.includes("Queued")) {
-      return {
-        success: true,
-        messageId: info.messageId,
-        previewUrl: nodemailer.getTestMessageUrl(info),
-      };
-    }
+
+    const previewUrl = nodemailer.getTestMessageUrl(info);
 
     return {
       success: true,
       messageId: info.messageId,
+      previewUrl: previewUrl || null,
     };
   } catch (error) {
     console.error("Error sending email:", error);
