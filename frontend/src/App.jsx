@@ -3,6 +3,10 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import CustomerDetails from "./pages/CustomerDetails";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+
 
 function ProtectedRoute({ children }) {
   const isLoggedIn = localStorage.getItem("token") === "loggedIn";
@@ -33,6 +37,10 @@ function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+        <ToastContainer
+        position="bottom-right"
+        autoClose={4000}
+      />
     </BrowserRouter>
   );
 }
