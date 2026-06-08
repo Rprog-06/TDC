@@ -121,23 +121,33 @@ function CustomerDetails() {
   };
 
   const sendMatch = async (matchId) => {
+    // Quick validation before sending
+    if (!customer.email) {
+      toast.error("❌ Customer email is missing. Add email first.", {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
     try {
       setSendingMatchId(matchId);
       const response = await API.post("/actions/send-match", {
         customerId: customer.id,
         matchId,
       });
-      
+
       if (response.data.success) {
         toast.success(
-          `Match sent! Email notification sent to ${customer.email}`,
+          `✅ Match sent to ${customer.email}`,
           { position: "bottom-right", autoClose: 4000 }
         );
       }
     } catch (sendError) {
       console.error(sendError);
-      const errorMsg = sendError.response?.data?.message || "Unable to send match";
-      toast.error(errorMsg, { position: "bottom-right", autoClose: 4000 });
+      const errorMsg =
+        sendError.response?.data?.message || "Failed to send match";
+      toast.error(`❌ ${errorMsg}`, { position: "bottom-right", autoClose: 4000 });
     } finally {
       setSendingMatchId(null);
     }

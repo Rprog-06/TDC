@@ -34,6 +34,23 @@ router.post("/send-match", async (req, res) => {
       });
     }
 
+    // Validate email address exists and is valid
+    if (!customer.email || customer.email.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Customer email address is missing. Please add an email before sending.",
+      });
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customer.email)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid email format: ${customer.email}. Please update the customer email.`,
+      });
+    }
+
     // Send email
     const emailResult = await sendMatchEmail(customer, match);
 
