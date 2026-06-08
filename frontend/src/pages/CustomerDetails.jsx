@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 
 import API from "../services/api";
 
@@ -116,20 +117,27 @@ function CustomerDetails() {
 
   const saveNotes = () => {
     localStorage.setItem(`notes-${id}`, notes);
-    alert("Notes Saved");
+    toast.success("Notes saved successfully!", { position: "bottom-right", autoClose: 2000 });
   };
 
   const sendMatch = async (matchId) => {
     try {
       setSendingMatchId(matchId);
-      await API.post("/actions/send-match", {
+      const response = await API.post("/actions/send-match", {
         customerId: customer.id,
         matchId,
       });
-      alert("Match Sent");
+      
+      if (response.data.success) {
+        toast.success(
+          `Match sent! Email notification sent to ${customer.email}`,
+          { position: "bottom-right", autoClose: 4000 }
+        );
+      }
     } catch (sendError) {
       console.error(sendError);
-      alert("Unable to send match");
+      const errorMsg = sendError.response?.data?.message || "Unable to send match";
+      toast.error(errorMsg, { position: "bottom-right", autoClose: 4000 });
     } finally {
       setSendingMatchId(null);
     }
