@@ -20,6 +20,7 @@ useEffect(() => {
       setLoading(true);
       setError("");
       const res = await API.get("/customers");
+      console.log(res.data)
       setCustomers(res.data);
     } catch (error) {
       console.error(error);
