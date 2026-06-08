@@ -2,6 +2,7 @@ const express = require("express");
 const { getEmailConfigStatus, sendMatchEmail } = require("../utils/emailService");
 const customers = require("../data/customer.json");
 const profiles = require("../data/profiles.json");
+const sgMail=require("@sendgrid/mail")
 
 const router = express.Router();
 
