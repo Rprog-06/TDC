@@ -2,6 +2,72 @@ const nodemailer = require("nodemailer");
 
 let transporterPromise = null;
 
+const TRUE_VALUES = new Set(["true", "1", "yes"]);
+
+function isProductionLike() {
+  return (
+    process.env.NODE_ENV === "production" ||
+    Boolean(process.env.RENDER) ||
+    Boolean(process.env.VERCEL) ||
+    Boolean(process.env.RAILWAY_ENVIRONMENT) ||
+    Boolean(process.env.FLY_APP_NAME)
+  );
+}
+
+function getEmailPassword() {
+  return process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.SMTP_PASSWORD;
+}
+
+function getSmtpConfig() {
+  const port = parseInt(process.env.EMAIL_PORT, 10) || 587;
+  const secure =
+    process.env.EMAIL_SECURE === undefined
+      ? port === 465
+      : TRUE_VALUES.has(String(process.env.EMAIL_SECURE).toLowerCase());
+
+  return {
+    host: process.env.EMAIL_HOST,
+    port,
+    secure,
+    user: process.env.EMAIL_USER || process.env.SMTP_USER,
+    pass: getEmailPassword(),
+    from: process.env.EMAIL_FROM,
+  };
+}
+
+function getMissingSmtpKeys(config) {
+  const missing = [];
+
+  if (!config.host) missing.push("EMAIL_HOST");
+  if (!config.user) missing.push("EMAIL_USER");
+  if (!config.pass) missing.push("EMAIL_PASSWORD");
+
+  return missing;
+}
+
+function createEmailError(message, statusCode = 502) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
+function getEmailConfigStatus() {
+  const config = getSmtpConfig();
+  const missing = getMissingSmtpKeys(config);
+
+  return {
+    configured: missing.length === 0,
+    productionLike: isProductionLike(),
+    missing,
+    hostSet: Boolean(config.host),
+    port: config.port,
+    secure: config.secure,
+    userSet: Boolean(config.user),
+    passwordSet: Boolean(config.pass),
+    fromSet: Boolean(config.from),
+  };
+}
+
 /**
  * Get the transporter, auto-creating an Ethereal test account
  * if no valid production email config is set.
@@ -9,29 +75,37 @@ let transporterPromise = null;
 async function getTransporter() {
   if (transporterPromise) return transporterPromise;
 
-  // If real email config is provided AND we're in production, use it
-  if (
-    process.env.NODE_ENV === "production" &&
-    process.env.EMAIL_HOST &&
-    process.env.EMAIL_USER &&
-    process.env.EMAIL_PASSWORD
-  ) {
+  const config = getSmtpConfig();
+  const missing = getMissingSmtpKeys(config);
+
+  // Use real SMTP whenever it is configured. This keeps production deploys from
+  // depending on NODE_ENV being set exactly to "production".
+  if (missing.length === 0) {
     transporterPromise = Promise.resolve(
       nodemailer.createTransport({
-        host: process.env.EMAIL_HOST,
-        port: parseInt(process.env.EMAIL_PORT, 10) || 587,
-        secure: process.env.EMAIL_SECURE === "true",
+        host: config.host,
+        port: config.port,
+        secure: config.secure,
         auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASSWORD,
+          user: config.user,
+          pass: config.pass,
         },
       })
     );
     return transporterPromise;
   }
 
+  if (isProductionLike()) {
+    throw createEmailError(
+      `Email SMTP is not configured. Missing: ${missing.join(
+        ", "
+      )}. Add these environment variables in your production backend service.`,
+      503
+    );
+  }
+
   // Development / demo fallback: auto-create Ethereal test account
-  console.log("No EMAIL_HOST configured — using Ethereal test account for emails.");
+  console.log("No complete EMAIL_* config found - using Ethereal test account for emails.");
   transporterPromise = nodemailer.createTestAccount().then((account) => {
     console.log("Ethereal account created:", account.user);
     return nodemailer.createTransport({
@@ -62,18 +136,18 @@ async function sendMatchEmail(customer, match) {
   const emailTemplate = `
     <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
       <h2 style="color: #2563eb;">Hi ${customer.firstName},</h2>
-      
+
       <p>We found a great match for you! Meet:</p>
-      
+
       <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
         <h3 style="margin: 0 0 10px 0; color: #1f2937;">${match.firstName} ${match.lastName || ""}</h3>
-        
+
         <p style="margin: 5px 0;"><strong>Age:</strong> ${match.age}</p>
         <p style="margin: 5px 0;"><strong>City:</strong> ${match.city}</p>
         <p style="margin: 5px 0;"><strong>Profession:</strong> ${match.designation || match.profession || "N/A"}</p>
         ${match.income ? `<p style="margin: 5px 0;"><strong>Income:</strong> Rs. ${Number(match.income).toLocaleString("en-IN")}</p>` : ""}
         ${match.education ? `<p style="margin: 5px 0;"><strong>Education:</strong> ${match.education}</p>` : ""}
-        
+
         ${match.fitLabel ? `<p style="margin-top: 10px;"><strong>Match Fit:</strong> <span style="color: #16a34a; font-weight: bold;">${match.fitLabel}</span> (${match.score}%)</p>` : ""}
       </div>
 
@@ -83,7 +157,7 @@ async function sendMatchEmail(customer, match) {
         Best regards,<br>
         <strong>The Date Crew (TDC) Matchmaking Team</strong>
       </p>
-      
+
       <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
       <p style="color: #999; font-size: 12px;">
         This is a notification from your matchmaker. If you have any questions, please reach out to your assigned matchmaker.
@@ -91,10 +165,11 @@ async function sendMatchEmail(customer, match) {
     </div>
   `;
 
+  const config = getSmtpConfig();
   const mailOptions = {
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USER || "noreply@thedatecrew.com",
+    from: config.from || config.user || "noreply@thedatecrew.com",
     to: customer.email,
-    subject: `New Match Found! 💕 ${match.firstName} wants to connect with you`,
+    subject: `New Match Found! ${match.firstName} wants to connect with you`,
     html: emailTemplate,
   };
 
@@ -112,8 +187,27 @@ async function sendMatchEmail(customer, match) {
     };
   } catch (error) {
     console.error("Error sending email:", error);
-    throw new Error(`Failed to send email: ${error.message}`);
+
+    if (error.statusCode) {
+      throw error;
+    }
+
+    if (error.code === "EAUTH") {
+      throw createEmailError(
+        "Email authentication failed. Check EMAIL_USER and EMAIL_PASSWORD in production. For Gmail, use an App Password.",
+        502
+      );
+    }
+
+    if (["ECONNECTION", "ETIMEDOUT", "ESOCKET"].includes(error.code)) {
+      throw createEmailError(
+        "Could not connect to the email provider. Check EMAIL_HOST, EMAIL_PORT, and EMAIL_SECURE.",
+        502
+      );
+    }
+
+    throw createEmailError(`Failed to send email: ${error.message}`, 502);
   }
 }
 
-module.exports = { sendMatchEmail };
+module.exports = { getEmailConfigStatus, sendMatchEmail };

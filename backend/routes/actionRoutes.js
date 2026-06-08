@@ -1,9 +1,16 @@
 const express = require("express");
-const { sendMatchEmail } = require("../utils/emailService");
+const { getEmailConfigStatus, sendMatchEmail } = require("../utils/emailService");
 const customers = require("../data/customer.json");
 const profiles = require("../data/profiles.json");
 
 const router = express.Router();
+
+router.get("/email-status", (req, res) => {
+  res.json({
+    success: true,
+    email: getEmailConfigStatus(),
+  });
+});
 
 router.post("/send-match", async (req, res) => {
   const { customerId, matchId } = req.body;
@@ -61,7 +68,7 @@ router.post("/send-match", async (req, res) => {
     });
   } catch (error) {
     console.error("Error in send-match:", error);
-    res.status(500).json({
+    res.status(error.statusCode || 500).json({
       success: false,
       message: error.message || "Failed to send match",
     });
