@@ -110,7 +110,7 @@
     "relocate": "No",
     "pets": "No",
     "status": "Active"
-  }
+  },
   {
     "id": 5,
     "firstName": "Sneha",
@@ -140,7 +140,7 @@
     "status": "Searching"
   
 
-  }
+  },
   {
     "id": 6,
     "firstName": "Arjun",
@@ -168,7 +168,7 @@
     "relocate": "No",
     "pets": "No",
     "status": "Active"
-    
+
 
   }
 
